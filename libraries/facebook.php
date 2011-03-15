@@ -28,6 +28,11 @@ class Facebook {
 		$this->_secret = $this->_CI->config->item('facebook_secret');
 		$this->_default_scope = $this->_CI->config->item('facebook_default_scope');
 		
+		if(!$this->_CI->session->userdata("facebook_scope"))
+		{
+			$this->set_scope($this->_default_scope);
+		}
+		
 		if(!$this->_CI->session->userdata("facebook_redirect_uri"))
 		{
 			$this->set_redirect_uri(current_url());
