@@ -87,13 +87,29 @@ class Facebook {
 	
 	public function is_logged_in()
 	{
+		$check = $this->call("get", "me");
+		
 		if($this->is_offline())
 		{
-			return TRUE;
+			if($check)
+			{
+				return TRUE;
+			}
+			else
+			{
+				return FALSE;
+			}
 		}
 		elseif($this->is_cookie())
 		{
-			return TRUE;
+			if($check)
+			{
+				return TRUE;
+			}
+			else
+			{
+				return FALSE;
+			}
 		}
 		elseif(isset($_GET['code']))
 		{
