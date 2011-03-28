@@ -1,4 +1,14 @@
 <?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+/**
+ * CodeIgniter Facebook Package
+ * 
+ * Author: Chris Harvey (Back2theMovies)
+ * Website: http://www.b2tm.com
+ * Email: chrish@b2tm.com
+ *
+ * Originally developed for Back2theMovies (http://www.b2tm.com)
+ * 
+ **/
 
 function facebook_meta($meta)
 {
