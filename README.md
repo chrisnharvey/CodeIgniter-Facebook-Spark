@@ -16,7 +16,7 @@ You can add Open Graph data to your pages, create an array that will be passed t
 	$this->load->view('facebook_demo', $data);
 You can then parse the array in your view file with the help of the helper included in this package
 
-<?=facebook_meta($meta)?>
+	<?=facebook_meta($meta)?>
 All configurable options for this package are located in the config file
 
 The best way to keep this package up-to-date is to create a "b2tm" folder inside your "third_party" folder, with a "facebook" folder in there with the contents of the entire package, you can then replace the code when a new release is available, either through "git pull" or simply copy the updated files into there. You can then add the package path using:
