@@ -1,10 +1,10 @@
 <?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 /**
- * CodeIgniter Facebook Package
+ * CodeIgniter Facebook Spark
  * 
  * Author: Chris Harvey (Back2theMovies)
- * Website: http://www.b2tm.com
- * Email: chrish@b2tm.com
+ * Website: http://www.chrisnharvey.com/code
+ * Email: chris@chrisnharvey.com
  *
  * Originally developed for Back2theMovies (http://www.b2tm.com)
  * 
@@ -20,13 +20,12 @@ class Facebook {
 	{
 		$this->_CI =& get_instance();
 		
-		$this->_CI->load->config('facebook');
 		$this->_CI->load->library("session");
 		$this->_CI->load->helper("url");
 		
-		$this->_app_id = $this->_CI->config->item('facebook_app_id');
-		$this->_secret = $this->_CI->config->item('facebook_secret');
-		$this->_default_scope = $this->_CI->config->item('facebook_default_scope');
+		$this->_app_id = config_item('facebook_app_id');
+		$this->_secret = config_item('facebook_secret');
+		$this->_default_scope = config_item('facebook_default_scope');
 		
 		if(!$this->_CI->session->userdata("facebook_scope"))
 		{
