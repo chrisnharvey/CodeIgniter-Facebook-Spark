@@ -53,7 +53,7 @@ code {
 <script>
    FB.init({ 
       appId:'<?=$this->facebook->_app_id?>', cookie:true, 
-      status:true, xfbml:true 
+      status:true, xfbml:true , oauth:true
    });
    FB.Event.subscribe('auth.login', function() {
      window.location.reload();
