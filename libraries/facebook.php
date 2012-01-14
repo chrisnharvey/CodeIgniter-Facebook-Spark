@@ -20,12 +20,14 @@ class Facebook {
 	{
 		$this->_CI =& get_instance();
 		
+		$this->_CI->load->config('facebook');
 		$this->_CI->load->library("session");
 		$this->_CI->load->helper("url");
 		
-		$this->_app_id = config_item('facebook_app_id');
-		$this->_secret = config_item('facebook_secret');
-		$this->_default_scope = config_item('facebook_default_scope');
+		$this->_app_id = $this->_CI->config->item('facebook_app_id');
+		$this->_secret = $this->_CI->config->item('facebook_secret');
+		$this->_default_scope = $this->_CI->config->item('facebook_default_scope');
+		$this->_cookie_name = "fbsr_".$this->_app_id;
 		
 		if(!$this->_CI->session->userdata("facebook_scope"))
 		{
@@ -74,11 +76,6 @@ class Facebook {
 		return "https://www.facebook.com/dialog/oauth?client_id=".$this->_app_id.$callback_string.$scope_string;
 	}
 	
-	public function logout()
-	{
-		$this->_unset("facebook_access_token");
-	}
-	
 	private function _unset($key)
 	{
 		$this->_CI->session->unset_userdata($key);
@@ -88,65 +85,7 @@ class Facebook {
 	{
 		$check = $this->call("get", "me");
 		
-		if($this->is_offline())
-		{
-			if($check)
-			{
-				return TRUE;
-			}
-			else
-			{
-				return FALSE;
-			}
-		}
-		elseif($this->is_cookie())
-		{
-			if($check)
-			{
-				return TRUE;
-			}
-			else
-			{
-				return FALSE;
-			}
-		}
-		elseif(isset($_GET['code']))
-		{
-			$call_url = $this->_graph_url."oauth/access_token?client_id=".$this->_app_id."&redirect_uri=".$this->_CI->session->userdata("facebook_redirect_uri")."&client_secret=".$this->_secret."&code=".$this->_CI->input->get("code");
-			$curl = $this->curl_call('get', $call_url);
-			$token = parse_str($curl);
-			
-			if(isset($access_token) || isset($expires)){
-				$this->set_access_token($access_token, $expires);
-				return TRUE;
-			}
-			else
-			{
-				return FALSE;
-			}
-		}
-		else
-		{
-			return FALSE;
-		}
-	}
-	
-	private function is_cookie()
-	{
-		if(isset($_COOKIE["fbs_".$this->_app_id]))
-		{
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
-	}
-	
-	private function is_offline()
-	{
-		$sess_access_token = $this->_CI->session->userdata("facebook_access_token");
-		if(is_array($sess_access_token))
+		if($this->get_access_token() && $check)
 		{
 			return TRUE;
 		}
@@ -179,7 +118,7 @@ class Facebook {
 			}
 			catch(facebookException $e)
 			{
-				$this->logout();
+				$this->_unset("facebook_access_token");
 				return FALSE;
 			}
 		}
@@ -235,42 +174,71 @@ class Facebook {
 		}
 	}
 	
-	private function get_session()
-	{
-		if($this->is_cookie())
-		{
-			$session = array();
+	protected function parse_signed_request($signed_request) {
+		list($encoded_sig, $payload) = explode('.', $signed_request, 2);
 
-			parse_str(trim(
-    	        get_magic_quotes_gpc()
-    	          ? stripslashes($_COOKIE["fbs_".$this->_app_id])
-    	          : $_COOKIE["fbs_".$this->_app_id],
-    	        '"'
-    	      ), $session);
-          
-      	  return $session;
-      	  
-        }
-        else
-        {
-        	return FALSE;
-        }
+		// decode the data
+		$sig = $this->base64_url_decode($encoded_sig);
+		$data = json_decode($this->base64_url_decode($payload), true);
+
+		if (strtoupper($data['algorithm']) !== 'HMAC-SHA256')
+		{
+			return NULL;
+		}
+		
+		// check sig
+		$expected_sig = hash_hmac('sha256', $payload, $this->_secret, $raw = true);
+		if ($sig !== $expected_sig)
+		{
+			return NULL;
+		}
+
+		return $data;
 	}
+	
+	protected static function base64_url_decode($input) {
+	    return base64_decode(strtr($input, '-_', '+/'));
+	  }
 	
 	public function get_access_token()
 	{
-		if($this->is_cookie())
-		{
-			$session = $this->get_session();
-			return array("token" => $session['access_token'], "expires" => $session['expires']);
-		}
-		elseif($this->is_offline())
+		$sess_access_token = $this->_CI->session->userdata("facebook_access_token");
+		if(!empty($sess_access_token))
 		{
 			return $this->_CI->session->userdata("facebook_access_token");
 		}
-		else
+		elseif(isset($_REQUEST['signed_request']))
 		{
-			return FALSE;
+			$signed_request = $this->parse_signed_request($_REQUEST['signed_request']);
+	    }
+		elseif(isset($_COOKIE[$this->_cookie_name]))
+		{
+	        $signed_request = $this->parse_signed_request($_COOKIE[$this->_cookie_name]);
+	    }
+	
+		if(isset($signed_request))
+		{
+			try
+			{
+				$call_url = $this->_graph_url."oauth/access_token?client_id=".$this->_app_id."&redirect_uri=&client_secret=".$this->_secret."&code=".$signed_request['code'];
+				$curl = $this->curl_call('get', $call_url);
+				$token = parse_str($curl);
+				
+				if(isset($access_token) || isset($expires))
+				{
+					$this->set_access_token($access_token, $expires);
+					return $this->_CI->session->userdata("facebook_access_token");
+				}
+				else
+				{
+					return FALSE;
+				}
+			}
+			catch(facebookException $e)
+			{
+				$this->_unset("facebook_access_token");
+				return FALSE;
+			}
 		}
 	}
 	
