@@ -224,9 +224,14 @@ class Facebook {
 				$curl = $this->curl_call('get', $call_url);
 				$token = parse_str($curl);
 				
-				if(isset($access_token) || isset($expires))
+				if(isset($access_token) && isset($expires))
 				{
 					$this->set_access_token($access_token, $expires);
+					return $this->_CI->session->userdata("facebook_access_token");
+				}
+				elseif(isset($access_token) && !isset($expires))
+				{
+					$this->set_access_token($access_token);
 					return $this->_CI->session->userdata("facebook_access_token");
 				}
 				else
@@ -242,9 +247,16 @@ class Facebook {
 		}
 	}
 	
-	public function set_access_token($access_token, $expires)
+	public function set_access_token($access_token, $expires = FALSE)
 	{
-		$this->_CI->session->set_userdata('facebook_access_token', array("token" => $access_token, "expires" => $expires));
+		if($expires != FALSE)
+		{
+			$this->_CI->session->set_userdata('facebook_access_token', array("token" => $access_token, "expires" => $expires));
+		}
+		else
+		{
+			$this->_CI->session->set_userdata('facebook_access_token', array("token" => $access_token));
+		}
 	}
 	
 	public function set_redirect_uri($redirect_uri)
