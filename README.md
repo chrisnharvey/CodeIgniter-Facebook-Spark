@@ -1,4 +1,7 @@
 #CodeIgniter Facebook Spark
+
+_Deprecated: Looking for a new maintainer for this package. Open an issue if interested._
+
 We can call the Facebook Graph API like this:
 
 	$this->facebook->call("get", "me");
